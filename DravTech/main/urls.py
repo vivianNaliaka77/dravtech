@@ -3,9 +3,15 @@ from django.urls import path
 from services import views as services_views
 from main import views  # main app views (home, about, contact, etc.)
 
+# Custom error handlers
+handler400 = views.custom_400
+handler403 = views.custom_403
+handler404 = views.custom_404
+handler500 = views.custom_500
+
 urlpatterns = [
 
-    # ── Main site pages ───────────────────────────────────────────────────────
+    # ── Main site pages ───────────────────────────────────────────────
     path("",         views.home,             name="home"),
     path("about/",   views.about,            name="about"),
     path("contact/", views.contact,          name="contact"),
@@ -18,7 +24,7 @@ urlpatterns = [
     # User contact history
     path("contact-history/",        views.user_contact_history, name="user_contact_history"),
 
-    # ── Projects ───────────────────────────────────────────────────────────────
+    # ── Projects ───────────────────────────────────────────────────────
     path("projects/",                        views.projects,            name="projects"),
     path("projects/<slug:slug>/",            views.project_detail,     name="project_detail"),
 

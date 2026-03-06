@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import mimetypes
 from django.http import JsonResponse
@@ -453,13 +454,12 @@ def checkout_view(request):
         order = Order.objects.create(
             customer           = request.user if request.user.is_authenticated else None,
             email              = request.POST.get("email", ""),
+            shipping_address   = shipping_addr,
             subtotal           = subtotal,
             shipping_cost      = shipping_cost,
             total              = total,
             has_physical_items = has_physical,
-            shipping_address   = shipping_addr,
-            status             = Order.STATUS_PENDING,
-            payment_status     = Order.PAYMENT_PENDING,
+            status             = 'pending'
         )
 
         # ── Create OrderItems (with title snapshot) ───────────────────────
@@ -488,14 +488,20 @@ def checkout_view(request):
         # ── Send email notifications ───────────────────────────────────────
         try:
             # Send email to customer
-            send_order_confirmation_email(request, order)
+            email_sent = send_order_confirmation_email(request, order)
             
             # Send notification to admin
-            send_admin_notification_email(request, order)
+            admin_email_sent = send_admin_notification_email(request, order)
+            
+            if email_sent and admin_email_sent:
+                messages.success(request, "Order confirmed! Check your email for confirmation details.")
+            else:
+                messages.warning(request, "Order created but there was an issue sending confirmation emails. Please check your order history.")
             
         except Exception as e:
             # Log error but don't fail the order process
-            print(f"Email sending failed: {e}")
+            logger.error(f"Email sending failed: {e}")
+            messages.error(request, "Order created but email confirmation failed. Please contact support.")
 
         # ── Redirect to confirmation ───────────────────────────────────────────
         return redirect("marketplace:order-confirmation", order_id=order.id)
@@ -525,12 +531,18 @@ def user_orders(request):
 
 def order_confirmation(request, order_id):
     order = get_object_or_404(Order, id=order_id)
-
-    # Basic guard: only the buyer or an anonymous session can see this
-    if order.customer and request.user.is_authenticated:
-        if order.customer != request.user and not request.user.is_staff:
+    
+    # Allow access if: 
+    # 1. No customer assigned (anonymous checkout), OR
+    # 2. User is authenticated and is the customer, OR  
+    # 3. User is staff (can view any order)
+    if order.customer is None or (request.user.is_authenticated and (order.customer == request.user or request.user.is_staff)):
+        return render(request, "marketplace/order_confirmation.html", {"order": order})
+    else:
+        # If customer exists but user is not authenticated or not the owner
+        if order.customer is not None and (not request.user.is_authenticated or (request.user.is_authenticated and order.customer != request.user and not request.user.is_staff)):
             raise Http404
-
+    
     return render(request, "marketplace/order_confirmation.html", {"order": order})
 
 

@@ -41,6 +41,40 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  background-color: var(--bg-light);
+  border: 1px solid var(--border-color);
+}
+
+.back-btn:hover {
+  color: var(--brand-primary);
+  background-color: rgba(6, 182, 212, 0.1);
+  text-decoration: none;
+  transform: translateX(-2px);
+}
+
+.breadcrumb-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .breadcrumb-bar a {
@@ -577,10 +611,15 @@ body {
 <!-- Breadcrumb -->
 <div class="breadcrumb-bar">
   <div class="container">
-    <a href="/">Home</a><span class="sep">/</span>
-    <a href="/marketplace/">Marketplace</a><span class="sep">/</span>
-    <a href="/marketplace/products/?type={{ product.product_type }}">{{ product.get_product_type_display }}</a><span class="sep">/</span>
-    <span class="cur">{{ product.title }}</span>
+    <a href="/" class="back-btn">
+      <i class="bi bi-arrow-left"></i> Back
+    </a>
+    <div class="breadcrumb-nav">
+      <a href="/">Home</a><span class="sep">/</span>
+      <a href="/marketplace/">Marketplace</a><span class="sep">/</span>
+      <a href="/marketplace/products/?type={{ product.product_type }}">{{ product.get_product_type_display }}</a><span class="sep">/</span>
+      <span class="cur">{{ product.title }}</span>
+    </div>
   </div>
 </div>
 
@@ -803,6 +842,256 @@ body {
   </div>
 </div>
 
+<!-- Related Products Section -->
+{% if related_products %}
+<section class="related-products-section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">Related {{ product.get_product_type_display }}s</h2>
+      <p class="section-subtitle">Discover similar products you might like</p>
+    </div>
+    
+    <div class="related-products-grid">
+      {% for related_product in related_products %}
+        <div class="related-product-card">
+          <div class="related-product-image">
+            {% if related_product.image %}
+              <img src="{{ related_product.image.url }}" alt="{{ related_product.title }}">
+            {% else %}
+              <div class="related-product-placeholder">
+                {% if related_product.product_type == 'digital' %}
+                  <i class="bi bi-cpu"></i>
+                {% elif related_product.product_type == 'merch' %}
+                  <i class="bi bi-bag"></i>
+                {% else %}
+                  <i class="bi bi-palette"></i>
+                {% endif %}
+              </div>
+            {% endif %}
+            
+            {% if related_product.is_featured %}
+              <div class="related-featured-badge">
+                <i class="bi bi-star-fill"></i>
+              </div>
+            {% endif %}
+          </div>
+          
+          <div class="related-product-info">
+            <h3 class="related-product-title">{{ related_product.title }}</h3>
+            <p class="related-product-description">{{ related_product.description|truncatewords:15 }}</p>
+            
+            <div class="related-product-meta">
+              <span class="related-product-price">
+                {% if related_product.price %}
+                  KES {{ related_product.price|floatformat:0 }}
+                {% else %}
+                  Free
+                {% endif %}
+              </span>
+            </div>
+            
+            <div class="related-product-actions">
+              <a href="{% url 'marketplace:product-detail' related_product.slug %}" class="btn btn-outline">
+                View Details
+              </a>
+              {% if related_product.product_type == 'merch' %}
+                <button onclick="addToCart('{{ related_product.id }}')" class="btn btn-primary btn-sm">
+                  <i class="bi bi-cart-plus"></i> Add to Cart
+                </button>
+              {% elif related_product.product_type == 'digital' %}
+                <a href="{% url 'marketplace:product-detail' related_product.slug %}" class="btn btn-primary btn-sm">
+                  <i class="bi bi-download"></i> Get Access
+                </a>
+              {% else %}
+                <a href="{% url 'marketplace:product-detail' related_product.slug %}" class="btn btn-primary btn-sm">
+                  <i class="bi bi-palette"></i> View Artwork
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    
+    <div class="view-all-cta">
+      <a href="{% url 'marketplace:products' %}?type={{ product.product_type }}" class="btn btn-outline">
+        View All {{ product.get_product_type_display }}s
+        <i class="bi bi-arrow-right"></i>
+      </a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- Related Products CSS -->
+<style>
+/* ── Related Products Section ── */
+.related-products-section {
+  padding: 80px 0;
+  background-color: var(--bg-light);
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.section-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.section-subtitle {
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.related-products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.related-product-card {
+  background-color: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.related-product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--brand-primary);
+}
+
+.related-product-image {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+}
+
+.related-product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.related-product-card:hover .related-product-image img {
+  transform: scale(1.05);
+}
+
+.related-product-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f3f4f6;
+  color: var(--text-muted);
+  font-size: 2rem;
+}
+
+.related-featured-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background-color: var(--brand-primary);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+}
+
+.related-product-info {
+  padding: 24px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.related-product-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.related-product-description {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-bottom: 16px;
+  flex: 1;
+}
+
+.related-product-meta {
+  margin-bottom: 16px;
+}
+
+.related-product-price {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--brand-primary);
+}
+
+.related-product-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 0.875rem;
+}
+
+.view-all-cta {
+  text-align: center;
+}
+
+.view-all-cta .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .related-products-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+  }
+  
+  .section-title {
+    font-size: 2rem;
+  }
+  
+  .related-product-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .breadcrumb-bar .container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+</style>
+
 <script>
 function addToCart(productId) {
   fetch('/marketplace/cart/add/', {
@@ -860,6 +1149,5 @@ function addToCart(productId) {
   // Update cart count on page load
   document.addEventListener('DOMContentLoaded', updateCartCount);
 </script>
+{% endblock %}
 
-</body>
-</html>

@@ -666,3 +666,68 @@ def project_detail(request, slug):
     }
     
     return render(request, 'main/project_detail.html', context)
+
+
+# ===================== ERROR HANDLING VIEWS =====================
+
+def custom_400(request, exception=None):
+    """Handle 400 Bad Request errors"""
+    return render(request, 'error.html', {
+        'error_code': '400',
+        'error_title': 'Bad Request',
+        'error_message': 'The server cannot process your request due to invalid syntax or missing parameters.',
+        'exception': str(exception) if exception else None
+    }, status=400)
+
+def custom_403(request, exception=None):
+    """Handle 403 Forbidden errors"""
+    return render(request, 'error.html', {
+        'error_code': '403',
+        'error_title': 'Access Denied',
+        'error_message': 'You don\'t have permission to access this resource.',
+        'exception': str(exception) if exception else None
+    }, status=403)
+
+def custom_404(request, exception=None):
+    """Handle 404 Not Found errors"""
+    return render(request, 'error.html', {
+        'error_code': '404',
+        'error_title': 'Page Not Found',
+        'error_message': 'The page you\'re looking for doesn\'t exist or has been moved.',
+        'exception': str(exception) if exception else None
+    }, status=404)
+
+def custom_500(request):
+    """Handle 500 Internal Server Error"""
+    return render(request, 'error.html', {
+        'error_code': '500',
+        'error_title': 'Internal Server Error',
+        'error_message': 'Our server encountered an unexpected error and couldn\'t complete your request.'
+    }, status=500)
+
+def custom_501(request, exception=None):
+    """Handle 501 Not Implemented errors"""
+    return render(request, 'error.html', {
+        'error_code': '501',
+        'error_title': 'Not Implemented',
+        'error_message': 'The server doesn\'t support the functionality required to process this request.',
+        'exception': str(exception) if exception else None
+    }, status=501)
+
+def custom_502(request, exception=None):
+    """Handle 502 Bad Gateway errors"""
+    return render(request, 'error.html', {
+        'error_code': '502',
+        'error_title': 'Bad Gateway',
+        'error_message': 'The server received an invalid response from another server.',
+        'exception': str(exception) if exception else None
+    }, status=502)
+
+def custom_503(request, exception=None):
+    """Handle 503 Service Unavailable errors"""
+    return render(request, 'error.html', {
+        'error_code': '503',
+        'error_title': 'Service Unavailable',
+        'error_message': 'The server is temporarily unable to handle your request.',
+        'exception': str(exception) if exception else None
+    }, status=503)
